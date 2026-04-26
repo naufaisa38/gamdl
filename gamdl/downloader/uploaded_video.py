@@ -1,9 +1,13 @@
 from pathlib import Path
 
+import structlog
+
 from ..interface.enums import CoverFormat
 from ..interface.types import AppleMusicMedia
 from .base import AppleMusicBaseDownloader
 from .types import DownloadItem
+
+logger = structlog.get_logger(__name__)
 
 
 class AppleMusicUploadedVideoDownloader:
@@ -46,6 +50,12 @@ class AppleMusicUploadedVideoDownloader:
         self,
         download_item: DownloadItem,
     ) -> None:
+        logger.info(
+            "downloading_uploaded_video",
+            title=download_item.media.tags.title,
+            quality_label=download_item.media.stream_info.quality_label,
+        )
+
         await self.base._download_ytdlp_async(
             download_item.media.stream_info.video_track.stream_url,
             download_item.staged_path,

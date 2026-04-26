@@ -147,6 +147,18 @@ class AppleMusicSongDownloader:
         self,
         download_item: DownloadItem,
     ) -> None:
+        bitrate_label = (
+            f", {download_item.media.stream_info.bitrate_label}"
+            if download_item.media.stream_info.bitrate_label
+            else ""
+        )
+        logger.info(
+            "downloading_song",
+            title=download_item.media.tags.title,
+            quality_label=download_item.media.stream_info.quality_label,
+            bitrate_label=bitrate_label.removeprefix(", "),
+        )
+
         encrypted_path = self.base.get_temp_path(
             download_item.media.media_metadata["id"],
             download_item.uuid_,

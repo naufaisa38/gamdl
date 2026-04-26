@@ -362,9 +362,12 @@ class AppleMusicSongInterface:
                 "com.apple.streamingkeydelivery",
             )
 
+        bit_depth_hz = "16-bit / 48 kHz"
         stream_info_av = StreamInfoAv(
             audio_track=stream_info,
             file_format=MediaFileFormat.MP4 if is_mp4 else MediaFileFormat.M4A,
+            quality_label=f'{codec.value.replace("-", " ").upper()} {bit_depth_hz}',
+            bitrate_label=f'{round(playlist["stream_info"]["average_bandwidth"] / 1000)} kbps',
         )
 
         log.debug("success", stream_info=stream_info_av)
@@ -464,10 +467,13 @@ class AppleMusicSongInterface:
         )
         stream_info.widevine_pssh = m3u8_obj.keys[0].uri
 
+        bit_depth_hz = "16-bit / 44.1 kHz"
         stream_info_av = StreamInfoAv(
             media_id=webplayback["songList"][0]["songId"],
             audio_track=stream_info,
             file_format=MediaFileFormat.M4A,
+            quality_label=f'{codec.value.replace("-", " ").upper()} {bit_depth_hz}',
+            bitrate_label=("64 kbps" if codec == SongCodec.AAC_HE_LEGACY else "256 kbps"),
         )
         log.debug("success", stream_info=stream_info_av)
 

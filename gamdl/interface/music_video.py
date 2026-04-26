@@ -186,6 +186,7 @@ class AppleMusicMusicVideoInterface:
             video_track=stream_info_video,
             audio_track=stream_info_audio,
             file_format=file_format,
+            quality_label=f"{self.resolution.value} {stream_info_video.codec[:4].upper()}",
         )
 
         log.debug("success", stream_info=stream_info)
@@ -319,6 +320,7 @@ class AppleMusicMusicVideoInterface:
 
         stream_info.stream_url = playlist.uri
         stream_info.codec = playlist.stream_info.codecs
+        stream_info.bitrate_label = f'{round(playlist.stream_info.bandwidth / 1000)} kbps'
         stream_info.width, stream_info.height = playlist.stream_info.resolution
 
         playlist_m3u8_obj = m3u8.loads(

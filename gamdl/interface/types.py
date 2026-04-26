@@ -120,6 +120,7 @@ class StreamInfo:
     playready_pssh: str = None
     fairplay_key: str = None
     codec: str = None
+    bitrate_label: str = None
     width: int = None
     height: int = None
     legacy: bool = None
@@ -131,6 +132,8 @@ class StreamInfoAv:
     video_track: StreamInfo = None
     audio_track: StreamInfo = None
     file_format: MediaFileFormat = None
+    quality_label: str = None
+    bitrate_label: str = None
 
 
 @dataclass

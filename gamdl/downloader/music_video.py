@@ -1,11 +1,15 @@
 from pathlib import Path
 
+import structlog
+
 from ..interface.enums import CoverFormat
 from ..interface.types import AppleMusicMedia, DecryptionKeyAv
 from ..utils import async_subprocess
 from .base import AppleMusicBaseDownloader
 from .enums import RemuxFormatMusicVideo, RemuxMode
 from .types import DownloadItem
+
+logger = structlog.get_logger(__name__)
 
 
 class AppleMusicMusicVideoDownloader:
@@ -155,6 +159,12 @@ class AppleMusicMusicVideoDownloader:
         self,
         download_item: DownloadItem,
     ) -> None:
+        logger.info(
+            "downloading_music_video",
+            title=download_item.media.tags.title,
+            quality_label=download_item.media.stream_info.quality_label,
+        )
+
         encrypted_path_video = self.base.get_temp_path(
             download_item.media.media_metadata["id"],
             download_item.uuid_,

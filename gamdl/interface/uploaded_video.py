@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Callable
+import re
 from typing import AsyncGenerator
 
 import structlog
@@ -27,7 +28,21 @@ class AppleMusicUploadedVideoInterface:
         self.quality = quality
         self.ask_quality_function = ask_quality_function
 
-    def _get_best_stream_url(self, metadata: dict) -> str:
+    def _format_quality_label(self, quality: str) -> str:
+        label_map = {
+            "1080pHdVideo": "1080p HD Video",
+            "720pHdVideo": "720p HD Video",
+            "sdVideoWithPlusAudio": "SD Video + Plus Audio",
+            "sdVideo": "SD Video",
+            "sd480pVideo": "480p Video",
+            "provisionalUploadVideo": "Provisional Upload Video",
+        }
+        if quality in label_map:
+            return label_map[quality]
+
+        return re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", quality)
+
+    def _get_best_stream_selection(self, metadata: dict) -> tuple[str, str]:
         best_quality = next(
             (
                 quality
@@ -36,30 +51,44 @@ class AppleMusicUploadedVideoInterface:
             ),
             None,
         )
-        return metadata["attributes"]["assetTokens"][best_quality]
+        return best_quality, metadata["attributes"]["assetTokens"][best_quality]
 
-    async def _get_stream_url_from_user(self, metadata: dict) -> str | None:
+    async def _get_stream_selection_from_user(
+        self, metadata: dict
+    ) -> tuple[str | None, str | None]:
         if self.ask_quality_function:
             selected_quality = self.ask_quality_function(
                 metadata["attributes"]["assetTokens"]
             )
             if asyncio.iscoroutine(selected_quality):
                 selected_quality = await selected_quality
-            return selected_quality
 
-        return None
+            asset_tokens = metadata["attributes"]["assetTokens"]
+            if selected_quality in asset_tokens:
+                return selected_quality, asset_tokens[selected_quality]
 
-    async def _get_stream_url(
+            if selected_quality in asset_tokens.values():
+                for quality, stream_url in asset_tokens.items():
+                    if stream_url == selected_quality:
+                        return quality, stream_url
+
+                return None, selected_quality
+
+            return None, None
+
+        return None, None
+
+    async def _get_stream_selection(
         self,
         metadata: dict,
-    ) -> str | None:
+    ) -> tuple[str | None, str | None]:
         if self.quality == UploadedVideoQuality.BEST:
-            stream_url = self._get_best_stream_url(metadata)
+            return self._get_best_stream_selection(metadata)
 
         if self.quality == UploadedVideoQuality.ASK:
-            stream_url = await self._get_stream_url_from_user(metadata)
+            return await self._get_stream_selection_from_user(metadata)
 
-        return stream_url
+        return None, None
 
     async def get_stream_info(
         self,
@@ -69,7 +98,7 @@ class AppleMusicUploadedVideoInterface:
             action="get_uploaded_video_stream_info", media_id=metadata["id"]
         )
 
-        stream_url = await self._get_stream_url(metadata)
+        selected_quality, stream_url = await self._get_stream_selection(metadata)
         if not stream_url:
             log.debug("no_stream_url_available")
 
@@ -79,6 +108,11 @@ class AppleMusicUploadedVideoInterface:
             file_format=MediaFileFormat.M4V,
             video_track=StreamInfo(
                 stream_url=stream_url,
+            ),
+            quality_label=(
+                self._format_quality_label(selected_quality)
+                if selected_quality
+                else "Unknown"
             ),
         )
 
