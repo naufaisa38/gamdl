@@ -525,6 +525,12 @@ class AppleMusicSongInterface:
                     codec=self.codec_priority,
                 )
 
+            if not media.stream_info.audio_track:
+                raise GamdlInterfaceFormatNotAvailableError(
+                    media_id=media.media_id,
+                    codec=self.codec_priority,
+                )
+
             if (
                 not self.base.use_wrapper
                 and not media.stream_info.audio_track.widevine_pssh
